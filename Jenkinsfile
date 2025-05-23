@@ -6,11 +6,6 @@ pipeline {
         DOCKER_IMAGE = 'suneel00/sample-info:${BUILD_NUMBER}'
         DOCKER_CREDENTIALS_ID = 'dockerhub-c'
     }
-    tools{
-        maven 'Maven 4.0.0 '
-        jdk 'JDK 17'
-    }
-
     stages {
         stage('Git Checkout') {
             steps {
