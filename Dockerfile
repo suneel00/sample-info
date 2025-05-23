@@ -4,7 +4,7 @@ WORKDIR /app
 
 ARG JAR_FILE=target/*.jar
 
-COPY ./target/sample-info-0.0.1-SNAPSHOT.jar sample.jar
+COPY ${JAR_FILE} sample.jar
 
 EXPOSE 8084
 
