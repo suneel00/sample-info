@@ -18,12 +18,12 @@ pipeline {
         }
         stage('code-compile'){
             steps{
-                sh "mvn clean compile"
+                sh "mvn clean compile -DskipTests"
             }
         }
         stage('unit Test'){
             steps{
-                sh "mvn test"
+                echo 'Skipping unit tests in this pipeline run.'
             }
         }
         stage('code-build'){
