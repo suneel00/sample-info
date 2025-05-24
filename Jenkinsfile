@@ -8,7 +8,7 @@ pipeline {
     }
     tools{
     	maven 'maven3.8.7'
-    	jdk 'JDK17'
+    	jdk 'jdk-17.0.15'
     }
     stages {
         stage('Git Checkout') {
