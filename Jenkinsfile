@@ -5,7 +5,7 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"
         FULL_IMAGE = "${DOCKER_IMAGE}:${IMAGE_TAG}"
         DOCKER_CREDENTIALS_ID = 'dockerhub-c'
-        SONARQUBE_ENV = 'SonarQube'
+        //SONARQUBE_ENV = 'SonarQube'
     }
     tools {
         maven 'maven3.8.7'
@@ -17,13 +17,13 @@ pipeline {
                 git credentialsId: 'github-c', branch: 'main', url: 'https://github.com/suneel00/sample-info.git'
             }
         }
-        stage('Code Analysis') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh 'mvn sonar:sonar'
-                }
-            }
-        }
+        // stage('Code Analysis') {
+        //     steps {
+        //         withSonarQubeEnv("${SONARQUBE_ENV}") {
+        //             sh 'mvn sonar:sonar'
+        //         }
+        //     }
+        // }
         stage('Build') {
             steps {
                 sh 'mvn clean package'
