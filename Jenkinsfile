@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'maven:3.8.7-eclipse-temurin-17'
-            args '-u root -v /root/.m2:/root/.m2' // runs as root to avoid permission issues
+            args '-u root -v /root/.m2:/root/.m2'
         }
     }
     environment {
@@ -14,8 +14,8 @@ pipeline {
     stages {
         stage('Clean Workspace') {
             steps {
-                // Force remove workspace to prevent permission issues
-                sh 'rm -rf * .git || true'
+                // Ensure all old files including 'target/' are removed
+                deleteDir()
             }
         }
 
