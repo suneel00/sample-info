@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-info
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sample-info
+  template:
+    metadata:
+      labels:
+        app: sample-info
+    spec:
+      containers:
+      - name: sample-info
+        image: suneel00/sample-info:latest
+        ports:
+        - containerPort: 8080
