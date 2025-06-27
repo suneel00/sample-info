@@ -1,34 +1,29 @@
 pipeline {
-    agent any
+    agent {
+    docker {
+        image 'maven:3.8.7-eclipse-temurin-17'
+        args '-u root --network host -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
     environment {
         DOCKER_IMAGE = 'suneel00/sample-info'
         IMAGE_TAG = "${BUILD_NUMBER}"
         FULL_IMAGE = "${DOCKER_IMAGE}:${IMAGE_TAG}"
         DOCKER_CREDENTIALS_ID = 'dockerhub-c'
-        SONARQUBE_ENV = 'SonarQube'
-    }
-    tools {
-        maven 'maven3.8.7'
-        jdk 'jdk17'
     }
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', credentialsId: 'github-c', url: 'https://github.com/suneel00/sample-info.git'
+                git credentialsId: 'github-c', branch: 'main', url: 'https://github.com/suneel00/sample-info.git'
             }
         }
-        stage('Code Analysis') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh 'mvn sonar:sonar'
-                }
-            }
-        }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package'
             }
         }
+
         stage('Docker Build & Push') {
             steps {
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
@@ -40,6 +35,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
