@@ -1,51 +1,53 @@
 pipeline {
     agent any
-
     environment {
-        GITHUB_REPO = 'https://github.com/suneel00/sample-info.git'
-        DOCKER_IMAGE = 'suneel00/sample-info:${BUILD_NUMBER}'
+        DOCKER_IMAGE = 'suneel00/sample-info'
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        FULL_IMAGE = "${DOCKER_IMAGE}:${IMAGE_TAG}"
         DOCKER_CREDENTIALS_ID = 'dockerhub-c'
+        SONARQUBE_ENV = 'SonarQube'
     }
-    tools{
-    	maven 'maven3.8.7'
-    	jdk 'jdk17'
+    tools {
+        maven 'maven3.8.7'
+        jdk 'jdk17'
     }
     stages {
-        stage('Git Checkout') {
+        stage('Checkout') {
             steps {
-                git credentialsId: 'github-c', branch: 'main', url: "${env.GITHUB_REPO}"
+                git credentialsId: 'github-c', url: 'https://github.com/suneel00/sample-info.git'
             }
         }
-        stage('code-compile'){
-            steps{
-                sh "mvn clean compile"
-            }
-        }
-        stage('unit Test'){
-            steps{
-                echo 'Skipping unit tests in this pipeline run.'
-                sh'mvn test'
-            }
-        }
-        stage('code-build'){
-            steps{
-                sh "mvn clean package"
-            }
-        }
-        stage('build and Push image to Docker Hub') {
+        stage('Code Analysis') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    script {
-                        sh """
-                            docker build -t ${DOCKER_IMAGE} .
-                            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                            docker push ${DOCKER_IMAGE}
-                        """
-                    }
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh 'mvn sonar:sonar'
                 }
             }
         }
-
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Docker Build & Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        docker build -t ${FULL_IMAGE} .
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${FULL_IMAGE}
+                    """
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh """
+                    sed -i 's|image: .*|image: ${FULL_IMAGE}|' deployment.yaml
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
+                """
+            }
+        }
     }
-
 }
