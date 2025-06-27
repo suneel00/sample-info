@@ -14,6 +14,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                deleteDir()
                 git credentialsId: 'github-c', branch: 'main', url: 'https://github.com/suneel00/sample-info.git'
             }
         }
