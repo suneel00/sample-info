@@ -14,7 +14,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', credentialsId: 'github-c', url: 'https://github.com/suneel00/sample-info.git'
+                git credentialsId: 'github-c', branch: 'main', url: 'https://github.com/suneel00/sample-info.git'
             }
         }
         stage('Code Analysis') {
