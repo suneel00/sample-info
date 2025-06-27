@@ -1,8 +1,8 @@
 pipeline {
     agent {
-    docker {
-        image 'maven:3.8.7-eclipse-temurin-17'
-        args '-u root -v /root/.m2:/root/.m2'
+        docker {
+            image 'maven:3.8.7-eclipse-temurin-17'
+            args '-u root -v /root/.m2:/root/.m2' // runs as root to avoid permission issues
         }
     }
     environment {
@@ -12,9 +12,15 @@ pipeline {
         DOCKER_CREDENTIALS_ID = 'dockerhub-c'
     }
     stages {
+        stage('Clean Workspace') {
+            steps {
+                // Force remove workspace to prevent permission issues
+                sh 'rm -rf * .git || true'
+            }
+        }
+
         stage('Checkout') {
             steps {
-                deleteDir()
                 git credentialsId: 'github-c', branch: 'main', url: 'https://github.com/suneel00/sample-info.git'
             }
         }
