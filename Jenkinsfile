@@ -1,16 +1,16 @@
 pipeline {
     agent {
-    docker {
-        image 'maven:3.8.7-eclipse-temurin-17'
-        args '-u root --network host -v /var/run/docker.sock:/var/run/docker.sock'
+        docker {
+            image 'abhishekf5/maven-abhishek-docker-agent:v1'
+            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
-    environment {
-        DOCKER_IMAGE = 'suneel00/sample-info'
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        FULL_IMAGE = "${DOCKER_IMAGE}:${IMAGE_TAG}"
-        DOCKER_CREDENTIALS_ID = 'dockerhub-c'
-    }
+    // environment {
+    //     DOCKER_IMAGE = 'suneel00/sample-info'
+    //     IMAGE_TAG = "${BUILD_NUMBER}"
+    //     FULL_IMAGE = "${DOCKER_IMAGE}:${IMAGE_TAG}"
+    //     DOCKER_CREDENTIALS_ID = 'dockerhub-c'
+    // }
     stages {
         stage('Checkout') {
             steps {
@@ -23,14 +23,24 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
+        stage('Static Code Analysis') {
+            environment {
+                SONAR_URL = 'http://<ec2-ip>:9000'
+            }
+            steps {
+                withCredentials([string(credentialsId: 'SonarQube', variable: 'sonarqube-token')]) {
+                    sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn sonar:sonar -Dsonar.login=$sonarqube-token -Dsonar.host.url=${SonarQube}'
+                }
+            }
+        }
 
         stage('Docker Build & Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: "${dockerhub-c}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
-                        docker build -t ${FULL_IMAGE} .
+                        docker build -t ${DOCKER_IMAGE} .
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${FULL_IMAGE}
+                        docker push ${DOCKER_IMAGE}
                     """
                 }
             }
@@ -39,7 +49,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
-                    sed -i 's|image: .*|image: ${FULL_IMAGE}|' deployment.yaml
+                    sed -i 's|image: .*|image: ${DOCKER_IMAGE}|' deployment.yaml
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
                 """
